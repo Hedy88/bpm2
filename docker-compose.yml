@@ -1,0 +1,48 @@
+version: '3'
+services:
+  bot:
+    image: node:alpine
+    user: 'node'
+    build:
+      dockerfile: Dockerfile
+    working_dir: /home/node/bpm2
+    restart: unless-stopped
+    volumes:
+      - ./:/home/node/bpm2
+    command: npm start
+    depends_on:
+      - postgres
+    networks:
+      bpm2:
+        ipv4_address: 172.20.0.2
+  postgres:
+    container_name: bpm2_postgres
+    image: postgres:13-alpine
+    restart: unless-stopped
+    volumes:
+      - ./pg-data:/var/lib/postgresql/data
+      - ./src/utils/psqlinit.sh:/docker-entrypoint-initdb.d/psqlinit.sh
+    environment:
+      POSTGRES_PASSWORD: verycoolpass
+      POSTGRES_USER: bpm2
+      POSTGRES_DB: bpm2
+    networks:
+      bpm2:
+        ipv4_address: 172.20.0.4
+  adminer:
+    image: adminer
+    container_name: bpm2_adminer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - 8888:8080
+    networks:
+      bpm2:
+        ipv4_address: 172.20.0.5
+networks:
+  bpm2:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
